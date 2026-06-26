@@ -1,0 +1,57 @@
+{
+  "name": "valibot-api-contracts",
+  "version": "0.1.0",
+  "private": false,
+  "keywords": [
+    "api",
+    "backend",
+    "contract",
+    "contracts",
+    "frontend",
+    "single",
+    "source",
+    "truth",
+    "valibot"
+  ],
+  "homepage": "https://github.com/kibertoad/valibot-contracts",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/kibertoad/valibot-contracts.git",
+    "directory": "packages/api-contracts"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "lint": "oxlint && oxfmt --check . && tsc",
+    "lint:fix": "oxlint --fix && oxfmt .",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "prepublishOnly": "pnpm run build"
+  },
+  "devDependencies": {
+    "@lokalise/tsconfig": "^5.0.0",
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.9",
+    "rimraf": "^6.1.2",
+    "typescript": "7.0.1-rc",
+    "valibot": "^1.4.1",
+    "vitest": "^4.1.9"
+  },
+  "peerDependencies": {
+    "valibot": ">=1.0.0"
+  }
+}
