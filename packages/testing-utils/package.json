@@ -1,0 +1,75 @@
+{
+  "name": "valibot-api-contracts-testing",
+  "version": "0.1.0",
+  "private": false,
+  "description": "Testing utilities for mocking valibot-api-contracts HTTP responses with mockttp and msw",
+  "keywords": [
+    "api",
+    "backend",
+    "contract",
+    "contracts",
+    "frontend",
+    "mock",
+    "mocking",
+    "mockttp",
+    "msw",
+    "testing",
+    "valibot"
+  ],
+  "homepage": "https://github.com/kibertoad/valibot-contracts",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/kibertoad/valibot-contracts.git",
+    "directory": "packages/testing-utils"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rimraf dist",
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "lint": "oxlint && oxfmt --check . && tsc",
+    "lint:fix": "oxlint --fix && oxfmt .",
+    "test": "vitest run",
+    "test:ci": "vitest run --coverage",
+    "prepublishOnly": "pnpm run build"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@lokalise/tsconfig": "^5.0.0",
+    "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.9",
+    "mockttp": "^4.4.2",
+    "msw": "^2.13.2",
+    "rimraf": "^6.1.2",
+    "typescript": "7.0.1-rc",
+    "valibot": "^1.4.1",
+    "valibot-api-contracts": "workspace:*",
+    "vitest": "^4.1.9"
+  },
+  "peerDependencies": {
+    "mockttp": ">=4.0.0",
+    "msw": ">=2.7.0",
+    "valibot": ">=1.0.0",
+    "valibot-api-contracts": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "mockttp": {
+      "optional": true
+    },
+    "msw": {
+      "optional": true
+    }
+  }
+}
