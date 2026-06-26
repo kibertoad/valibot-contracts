@@ -34,6 +34,7 @@
     "access": "public"
   },
   "scripts": {
+    "clean": "rimraf dist",
     "build": "rimraf dist && tsc --project tsconfig.build.json",
     "lint": "oxlint && oxfmt --check . && tsc",
     "lint:fix": "oxlint --fix && oxfmt .",

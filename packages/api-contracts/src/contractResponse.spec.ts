@@ -183,6 +183,23 @@ describe("resolveContractResponse", () => {
       const schema = object({ id: string() });
       expect(resolveContractResponse(schema, "text/plain")).toBeNull();
     });
+
+    it("resolves structured +json suffixes (problem+json, vnd.api+json)", () => {
+      const schema = object({ error: string() });
+      expect(resolveContractResponse(schema, "application/problem+json")).toEqual({
+        kind: "json",
+        schema,
+      });
+      expect(resolveContractResponse(schema, "application/vnd.api+json; charset=utf-8")).toEqual({
+        kind: "json",
+        schema,
+      });
+    });
+
+    it("does not match a content-type that merely contains application/json as a substring", () => {
+      const schema = object({ id: string() });
+      expect(resolveContractResponse(schema, "text/html; note=application/json")).toBeNull();
+    });
   });
 
   describe("textResponse", () => {
@@ -313,6 +330,17 @@ describe("resolveContractResponse", () => {
     it("returns null when no entry matches content-type", () => {
       const entry = anyOfResponses([textResponse("text/csv"), blobResponse("image/png")]);
       expect(resolveContractResponse(entry, "application/json")).toBeNull();
+    });
+
+    it("does not let an earlier text entry shadow a later SSE entry by substring", () => {
+      // `text/event-stream` once matched `textResponse('text/')` via substring `includes`, making the
+      // SSE entry unreachable. Essence matching keeps each entry distinct regardless of order.
+      const sseSchema = { tick: object({ count: number() }) };
+      const entry = anyOfResponses([textResponse("text/"), sseResponse(sseSchema)]);
+      expect(resolveContractResponse(entry, "text/event-stream")).toEqual({
+        kind: "sse",
+        schemaByEventName: sseSchema,
+      });
     });
   });
 });

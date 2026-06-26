@@ -28,7 +28,7 @@ export type RequestHeaderSchema = RequestObjectSchema;
 export type ResponseHeaderSchema = RequestObjectSchema;
 
 export type CommonApiContract = {
-  // biome-ignore lint/suspicious/noExplicitAny: Required for compatibility with generics
+  // oxlint-disable-next-line typescript/no-explicit-any -- required for compatibility with generics
   pathResolver: RoutePathResolver<any>;
   requestPathParamsSchema?: RequestPathParamsSchema;
   requestQuerySchema?: RequestQuerySchema;

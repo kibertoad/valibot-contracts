@@ -1,4 +1,4 @@
-import { boolean, number, object, pipe, string, transform, unknown } from "valibot";
+import { boolean, number, object, optional, pipe, string, transform, unknown } from "valibot";
 import { describe, expectTypeOf, it } from "vitest";
 import type {
   ClientErrorHttpStatusCode,
@@ -71,6 +71,23 @@ describe("clientTypes", () => {
         streaming?: never;
         pathParams?: undefined;
         body: { name: string };
+        queryParams?: undefined;
+        headers?: undefined;
+        pathPrefix?: string;
+      }>();
+    });
+
+    it("makes body optional when requestBodySchema infers undefined (top-level optional)", () => {
+      const contract = defineApiContract({
+        method: "post",
+        pathResolver: () => "/products",
+        requestBodySchema: optional(object({ name: string() })),
+        responsesByStatusCode: { 201: unknown() },
+      });
+      expectTypeOf<ClientRequestParams<typeof contract, false>>().toEqualTypeOf<{
+        streaming?: never;
+        pathParams?: undefined;
+        body?: { name: string } | undefined;
         queryParams?: undefined;
         headers?: undefined;
         pathPrefix?: string;
@@ -254,6 +271,31 @@ describe("clientTypes", () => {
         }>;
       }>();
     });
+
+    it("drops a non-SSE success code instead of emitting body: never", () => {
+      const contract = defineApiContract({
+        method: "get",
+        pathResolver: () => "/feed",
+        responsesByStatusCode: {
+          200: sseResponse({ tick: object({ count: number() }) }),
+          201: object({ id: string() }),
+        },
+      });
+      type Result = InferSseClientResponse<typeof contract>;
+      // The 201 JSON success code carries no SSE body, so it is dropped from the SSE view rather
+      // than surviving as `{ statusCode: 201; body: never }`.
+      expectTypeOf<Extract<Result, { statusCode: 201 }>>().toEqualTypeOf<never>();
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 200;
+        headers: DefaultHeaders;
+        body: AsyncIterable<{
+          type: "tick";
+          data: { count: number };
+          lastEventId: string;
+          retry: number | undefined;
+        }>;
+      }>();
+    });
   });
 
   describe("InferNonSseClientResponse", () => {
@@ -289,6 +331,26 @@ describe("clientTypes", () => {
         statusCode: 200;
         headers: DefaultHeaders;
         body: { text: string };
+      }>();
+    });
+
+    it("drops an SSE-only success code instead of emitting body: never", () => {
+      const contract = defineApiContract({
+        method: "get",
+        pathResolver: () => "/feed",
+        responsesByStatusCode: {
+          200: sseResponse({ tick: object({ count: number() }) }),
+          201: object({ id: string() }),
+        },
+      });
+      type Result = InferNonSseClientResponse<typeof contract>;
+      // The 200 SSE-only success code carries no non-SSE body, so it is dropped from the non-SSE
+      // view rather than surviving as `{ statusCode: 200; body: never }`.
+      expectTypeOf<Extract<Result, { statusCode: 200 }>>().toEqualTypeOf<never>();
+      expectTypeOf<Result>().toEqualTypeOf<{
+        statusCode: 201;
+        headers: DefaultHeaders;
+        body: { id: string };
       }>();
     });
 

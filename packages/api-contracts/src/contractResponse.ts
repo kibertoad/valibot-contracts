@@ -10,6 +10,14 @@ export type ResponseOptions = {
   readonly description?: string;
 };
 
+/** Spreadable `description` fragment shared by every response factory. */
+const descriptionPart = (options?: ResponseOptions): { description?: string } =>
+  options?.description !== undefined ? { description: options.description } : {};
+
+/** Shared `_tag` discriminator check backing every `isX` response predicate. */
+const hasTag = (value: ApiContractResponse, tag: string): boolean =>
+  typeof value === "object" && value !== null && "_tag" in value && value._tag === tag;
+
 export type TypedTextResponse = {
   readonly _tag: "TextResponse";
   readonly contentType: string;
@@ -28,11 +36,11 @@ export const textResponse = (
 ): TypedTextResponse => ({
   _tag: "TextResponse",
   contentType,
-  ...(options?.description !== undefined && { description: options.description }),
+  ...descriptionPart(options),
 });
 
 export const isTextResponse = (value: ApiContractResponse): value is TypedTextResponse =>
-  typeof value === "object" && value !== null && "_tag" in value && value._tag === "TextResponse";
+  hasTag(value, "TextResponse");
 
 export type TypedBlobResponse = {
   readonly _tag: "BlobResponse";
@@ -52,11 +60,11 @@ export const blobResponse = (
 ): TypedBlobResponse => ({
   _tag: "BlobResponse",
   contentType,
-  ...(options?.description !== undefined && { description: options.description }),
+  ...descriptionPart(options),
 });
 
 export const isBlobResponse = (value: ApiContractResponse): value is TypedBlobResponse =>
-  typeof value === "object" && value !== null && "_tag" in value && value._tag === "BlobResponse";
+  hasTag(value, "BlobResponse");
 
 export type TypedStreamResponse = {
   readonly _tag: "StreamResponse";
@@ -79,11 +87,11 @@ export const streamResponse = (
 ): TypedStreamResponse => ({
   _tag: "StreamResponse",
   contentType,
-  ...(options?.description !== undefined && { description: options.description }),
+  ...descriptionPart(options),
 });
 
 export const isStreamResponse = (value: ApiContractResponse): value is TypedStreamResponse =>
-  typeof value === "object" && value !== null && "_tag" in value && value._tag === "StreamResponse";
+  hasTag(value, "StreamResponse");
 
 export type SseSchemaByEventName = Record<string, GenericSchema>;
 
@@ -99,11 +107,11 @@ export const sseResponse = <T extends SseSchemaByEventName>(
 ): TypedSseResponse<T> => ({
   _tag: "SseResponse",
   schemaByEventName,
-  ...(options?.description !== undefined && { description: options.description }),
+  ...descriptionPart(options),
 });
 
 export const isSseResponse = (value: ApiContractResponse): value is TypedSseResponse =>
-  typeof value === "object" && value !== null && "_tag" in value && value._tag === "SseResponse";
+  hasTag(value, "SseResponse");
 
 export type TypedJsonResponse = GenericSchema;
 
@@ -129,11 +137,11 @@ export const anyOfResponses = <T extends TypedApiContractResponse>(
 ): AnyOfResponses<T> => ({
   _tag: "AnyOfResponses",
   responses,
-  ...(options?.description !== undefined && { description: options.description }),
+  ...descriptionPart(options),
 });
 
 export const isAnyOfResponses = (value: ApiContractResponse): value is AnyOfResponses =>
-  typeof value === "object" && value !== null && "_tag" in value && value._tag === "AnyOfResponses";
+  hasTag(value, "AnyOfResponses");
 
 export type NoBodyResponse = {
   readonly _tag: "NoBodyResponse";
@@ -142,11 +150,11 @@ export type NoBodyResponse = {
 
 export const noBodyResponse = (options?: ResponseOptions): NoBodyResponse => ({
   _tag: "NoBodyResponse",
-  ...(options?.description !== undefined && { description: options.description }),
+  ...descriptionPart(options),
 });
 
 export const isNoBodyResponse = (value: ApiContractResponse): value is NoBodyResponse =>
-  typeof value === "object" && value !== null && "_tag" in value && value._tag === "NoBodyResponse";
+  hasTag(value, "NoBodyResponse");
 
 export type ApiContractResponse =
   | typeof ContractNoBody
@@ -166,29 +174,51 @@ export type ResponseKind =
   | { kind: "json"; schema: GenericSchema }
   | { kind: "sse"; schemaByEventName: SseSchemaByEventName };
 
+/**
+ * Extracts the lowercased media-type essence (the token before any `;` parameters) from a
+ * content-type value, e.g. `'text/csv; charset=utf-8'` -> `'text/csv'`.
+ */
+const contentTypeEssence = (contentType: string): string => {
+  const semicolon = contentType.indexOf(";");
+  const essence = semicolon === -1 ? contentType : contentType.slice(0, semicolon);
+  return essence.trim().toLowerCase();
+};
+
+/**
+ * Matches the JSON media type, including structured `+json` suffixes such as
+ * `application/problem+json` (RFC 7807) and `application/vnd.api+json` (JSON:API).
+ */
+const isJsonContentType = (essence: string): boolean =>
+  essence === "application/json" || essence.endsWith("+json");
+
 const matchTypedResponse = (
   entry: TypedApiContractResponse,
   contentType: string,
 ): ResponseKind | null => {
+  // Compare media-type essences (token before `;`), not raw substrings. Substring matching let an
+  // over-broad declared type (e.g. `text/`) shadow a more specific one (e.g. `text/event-stream`)
+  // and accepted unrelated types that merely contained the declared one as a substring.
+  const essence = contentTypeEssence(contentType);
+
   if (isTextResponse(entry)) {
-    return contentType.includes(entry.contentType) ? { kind: "text" } : null;
+    return essence === contentTypeEssence(entry.contentType) ? { kind: "text" } : null;
   }
 
   if (isBlobResponse(entry)) {
-    return contentType.includes(entry.contentType) ? { kind: "blob" } : null;
+    return essence === contentTypeEssence(entry.contentType) ? { kind: "blob" } : null;
   }
 
   if (isStreamResponse(entry)) {
-    return contentType.includes(entry.contentType) ? { kind: "stream" } : null;
+    return essence === contentTypeEssence(entry.contentType) ? { kind: "stream" } : null;
   }
 
   if (isSseResponse(entry)) {
-    return contentType.includes("text/event-stream")
+    return essence === "text/event-stream"
       ? { kind: "sse", schemaByEventName: entry.schemaByEventName }
       : null;
   }
 
-  if (contentType.includes("application/json")) {
+  if (isJsonContentType(essence)) {
     return { kind: "json", schema: entry };
   }
 

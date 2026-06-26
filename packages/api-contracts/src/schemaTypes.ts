@@ -22,5 +22,5 @@ export type InferSchemaOutput<T extends GenericSchema | undefined> = T extends G
 
 export type RoutePathResolver<PathParams> = (pathParams: PathParams) => string;
 
-// biome-ignore lint/suspicious/noEmptyInterface: augmentation target — consumers extend it via module augmentation
+// oxlint-disable-next-line typescript/no-empty-object-type -- augmentation target consumers extend via module augmentation
 export interface CommonRouteDefinitionMetadata extends Record<string, unknown> {}
