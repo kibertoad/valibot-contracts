@@ -48,7 +48,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "rimraf": "^6.1.2",
     "typescript": "7.0.1-rc",
-    "valibot": "^1.4.1",
+    "valibot": "^1.4.2",
     "vitest": "^4.1.9"
   },
   "peerDependencies": {
