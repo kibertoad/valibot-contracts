@@ -44,7 +44,7 @@
   },
   "devDependencies": {
     "@lokalise/tsconfig": "^5.0.0",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.1.0",
     "@vitest/coverage-v8": "^4.1.9",
     "rimraf": "^6.1.2",
     "typescript": "7.0.1-rc",
