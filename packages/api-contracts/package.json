@@ -45,11 +45,11 @@
   "devDependencies": {
     "@lokalise/tsconfig": "^5.0.0",
     "@types/node": "^25.9.3",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "^4.1.10",
     "rimraf": "^6.1.2",
     "typescript": "7.0.1-rc",
     "valibot": "^1.4.1",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.10"
   },
   "peerDependencies": {
     "valibot": ">=1.0.0"
